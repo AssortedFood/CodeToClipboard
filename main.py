@@ -7,13 +7,18 @@ import sqlite3
 CONTEXT_LIMIT = 128000  # Approximate token to character conversion
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STANDARD_IGNORE_FILE = os.path.join(PROJECT_DIR, 'standard.ctcignore')
+GLOBAL_IGNORE_FILE = os.path.join(PROJECT_DIR, 'global.ctcignore')
 
-def read_ctcignore(directory):
-    ignore_file_path = os.path.join(directory, '.ctcignore')
-    if os.path.isfile(ignore_file_path):
-        with open(ignore_file_path, 'r') as file:
+def read_ignore_file(file_path):
+    if os.path.isfile(file_path):
+        with open(file_path, 'r') as file:
             return [line.strip() for line in file.readlines()]
     return []
+
+def read_ctcignore(directory):
+    ignore_list = read_ignore_file(os.path.join(directory, '.ctcignore'))
+    global_ignore_list = read_ignore_file(GLOBAL_IGNORE_FILE)
+    return ignore_list + global_ignore_list
 
 def generate_ctcignore(directory):
     ignore_file_path = os.path.join(directory, '.ctcignore')
@@ -61,7 +66,27 @@ def convert_db_to_text(file_path):
     
     return "\n".join(output)
 
-def copy_files_to_clipboard(directory):
+def copy_file_to_clipboard(file_path):
+    try:
+        if file_path.endswith('.db'):
+            content = convert_db_to_text(file_path)
+        else:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                content = file.read()
+        clipboard_content = f"Filename: {os.path.basename(file_path)}\nContent:\n{content}\n"
+    except Exception as e:
+        print(f"Could not read file {file_path}: {e}")
+        return
+    
+    tokens_used = len(clipboard_content)
+    
+    if tokens_used > CONTEXT_LIMIT:
+        print("Warning: The clipboard content exceeds the GPT-4 Turbo context window limit of 128k characters.")
+    
+    pyperclip.copy(clipboard_content)
+    print(f"File content has been copied to the clipboard. Tokens used: {tokens_used}")
+
+def copy_files_in_directory_to_clipboard(directory):
     ignore_list = read_ctcignore(directory)
     all_files_content = []
     
@@ -97,8 +122,13 @@ if __name__ == "__main__":
             directory = sys.argv[2] if len(sys.argv) > 2 else os.getcwd()
             generate_ctcignore(directory)
         else:
-            directory = sys.argv[1]
-            copy_files_to_clipboard(directory)
+            path = sys.argv[1]
+            if os.path.isdir(path):
+                copy_files_in_directory_to_clipboard(path)
+            elif os.path.isfile(path):
+                copy_file_to_clipboard(path)
+            else:
+                print(f"The specified path {path} is neither a file nor a directory.")
     else:
         directory = os.getcwd()
-        copy_files_to_clipboard(directory)
+        copy_files_in_directory_to_clipboard(directory)
