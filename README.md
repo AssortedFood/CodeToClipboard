@@ -8,6 +8,7 @@ CodeToClipboard is a Python tool designed to assist developers by copying the na
 - Copies the name and content of every file in a directory to the clipboard.
 - Handles multiple text files efficiently.
 - Easy integration with ChatGPT for quick data dumps.
+- Can generate a standard `.ctcignore` file to specify files to ignore.
 
 ## Requirements
 
@@ -36,30 +37,28 @@ CodeToClipboard is a Python tool designed to assist developers by copying the na
 
 ## Usage
 
-1. Open the `main.py` script.
-
-2. Specify the directory containing your files by replacing the placeholder path:
-
-    ```python
-    # Specify your directory here
-    directory = "/path/to/your/directory"
-    ```
-
-3. Run the script:
-
+1. **Generate a Standard `.ctcignore` File**:
     ```sh
-    python main.py
+    python main.py --init-ignore /path/to/your/directory
+    ```
+    Or use the shorthand:
+    ```sh
+    python main.py --i /path/to/your/directory
+    ```
+    If no directory is specified, the `.ctcignore` file will be created in the current working directory:
+    ```sh
+    python main.py --init-ignore
     ```
 
-4. The names and contents of all files in the specified directory will be copied to your clipboard, ready to be pasted wherever needed.
-
-### Terminal Usage
-
-To use `CodeToClipboard` from the terminal, you can call the script with a directory as an argument:
-
-```sh
-python main.py /path/to/your/directory
-```
+2. **Run the Script to Copy Files**:
+    - Without Arguments: Uses the current working directory.
+        ```sh
+        python main.py
+        ```
+    - With Directory Argument: Specify a directory as an argument.
+        ```sh
+        python main.py /path/to/your/directory
+        ```
 
 ### Adding as an Alias
 
@@ -81,7 +80,11 @@ python main.py /path/to/your/directory
 
 4. **Add Alias to Profile**: Add the following line to the profile file:
     ```powershell
-    function ctc { python "C:\path\to\your\script\main.py" $args }
+    function ctc { python "C:\Users\Hamoon\Projects\CodeToClipboard\main.py" $args }
+    ```
+    Usage:
+    ```sh
+    ctc /path/to/your/directory
     ```
 
 5. **Save and Close**: Save the changes and close the text editor.
@@ -102,8 +105,25 @@ python main.py /path/to/your/directory
 
 3. **Add Alias to Bash Profile**: Add the following line to the `.bashrc` file:
     ```bash
-    alias ctc='python /path/to/your/script/main.py'
+    alias ctc='python /mnt/c/Users/Hamoon/Projects/CodeToClipboard/main.py'
     ```
+### Usage
+
+```sh
+ctc /path/to/your/directory
+```
+Or, you can `cd` to the directory and simply run:
+```sh
+ctc
+```
+To generate a `.ctcignore` file:
+```sh
+ctc --init-ignore /path/to/your/directory
+```
+Or use the shorthand:
+```sh
+ctc -i /path/to/your/directory
+```
 
 4. **Save and Close**: Save the changes and close the editor (in `nano`, you do this with `Ctrl+O` to write out and `Ctrl+X` to exit).
 
@@ -141,7 +161,7 @@ Content:
 
 ## License
 
-This project is licensed under the GPL-3.0 License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ## Contributing
 
