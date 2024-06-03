@@ -7,6 +7,7 @@ CodeToClipboard is a Python tool designed to assist developers by copying the na
 
 - Copies the name and content of every file in a directory to the clipboard.
 - Handles multiple text files efficiently.
+- Transforms .db files into a simple text file structure.
 - Easy integration with ChatGPT for quick data dumps.
 - Can generate a standard `.ctcignore` file to specify files to ignore.
 

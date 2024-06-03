@@ -1,6 +1,7 @@
 import os
 import pyperclip
 import sys
+import sqlite3
 
 # GPT-4 Turbo context limit in characters
 CONTEXT_LIMIT = 128000  # Approximate token to character conversion
@@ -25,6 +26,41 @@ def generate_ctcignore(directory):
     else:
         print(f"Standard ignore file not found at {STANDARD_IGNORE_FILE}")
 
+def convert_db_to_text(file_path):
+    output = []
+    try:
+        conn = sqlite3.connect(file_path)
+        cursor = conn.cursor()
+
+        # Get all table names
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+
+        for table in tables:
+            table_name = table[0]
+            output.append(f"Table: {table_name}")
+            
+            # Get table schema
+            cursor.execute(f"PRAGMA table_info({table_name});")
+            schema = cursor.fetchall()
+            output.append("Schema:")
+            for column in schema:
+                output.append(f"  {column[1]} ({column[2]})")
+
+            # Get table contents
+            cursor.execute(f"SELECT * FROM {table_name};")
+            rows = cursor.fetchall()
+            output.append("Contents:")
+            for row in rows:
+                output.append(f"  {row}")
+            output.append("\n")
+            
+        conn.close()
+    except Exception as e:
+        output.append(f"Could not read database {file_path}: {e}")
+    
+    return "\n".join(output)
+
 def copy_files_to_clipboard(directory):
     ignore_list = read_ctcignore(directory)
     all_files_content = []
@@ -37,19 +73,23 @@ def copy_files_to_clipboard(directory):
         
         if os.path.isfile(file_path):
             try:
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    content = file.read()
-                    all_files_content.append(f"Filename: {filename}\nContent:\n{content}\n")
+                if filename.endswith('.db'):
+                    content = convert_db_to_text(file_path)
+                else:
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        content = file.read()
+                all_files_content.append(f"Filename: {filename}\nContent:\n{content}\n")
             except Exception as e:
                 print(f"Could not read file {filename}: {e}")
     
     clipboard_content = "\n".join(all_files_content)
+    tokens_used = len(clipboard_content)
     
-    if len(clipboard_content) > CONTEXT_LIMIT:
+    if tokens_used > CONTEXT_LIMIT:
         print("Warning: The clipboard content exceeds the GPT-4 Turbo context window limit of 128k characters.")
     
     pyperclip.copy(clipboard_content)
-    print("All file names and contents have been copied to the clipboard.")
+    print(f"All file names and contents have been copied to the clipboard. Tokens used: {tokens_used}")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
