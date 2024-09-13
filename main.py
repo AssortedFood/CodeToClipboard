@@ -28,7 +28,7 @@ config = configparser.ConfigParser()
 CONFIG_FILE = SCRIPT_DIR / 'config.ini'
 config.read(CONFIG_FILE)
 
-# GPT-4 Turbo context limit in tokens
+# Predicted context limit in tokens
 CONTEXT_LIMIT = int(config.get('DEFAULT', 'context_limit', fallback='128000'))
 
 # Paths for ignore files
@@ -166,7 +166,7 @@ def copy_content(content, output_to_file=False, output_file=None):
     tokens_used = estimate_tokens(content)
 
     if tokens_used > CONTEXT_LIMIT:
-        logging.warning(f"The content exceeds the GPT-4 Turbo context window limit of {CONTEXT_LIMIT} tokens.")
+        logging.warning(f"The content exceeds the predicted context window limit of {CONTEXT_LIMIT} tokens.")
 
     if output_to_file:
         output_file = output_file or 'clipboard.txt'
@@ -241,11 +241,17 @@ def copy_files_in_directory_to_content(directory, recursive=False, encoding='utf
     """
     ignore_patterns = read_ctcignore(directory)
     all_files_content = []
+    total_files = 0
 
+    # Collect all files first to know total count
     if recursive:
-        files = directory.rglob('*')
+        files = list(directory.rglob('*'))
     else:
-        files = directory.iterdir()
+        files = list(directory.iterdir())
+
+    total_files = len([f for f in files if f.is_file()])
+
+    processed_files = 0
 
     for file_path in files:
         if file_path.is_file():
@@ -255,6 +261,9 @@ def copy_files_in_directory_to_content(directory, recursive=False, encoding='utf
             content = copy_file_to_content(file_path, encoding)
             if content:
                 all_files_content.append(content)
+            processed_files += 1
+            if processed_files % 10 == 0 or processed_files == total_files:
+                logging.info(f"Processed {processed_files}/{total_files} files.")
 
     return "\n".join(all_files_content)
 
