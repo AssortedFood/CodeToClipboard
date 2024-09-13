@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import fnmatch
 import logging
+import configparser
 
 try:
     import pyperclip
@@ -18,18 +19,21 @@ except ImportError:
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-# Read configuration from config.ini if available
-import configparser
+# Get current working directory
+CURRENT_DIR = Path.cwd()
+SCRIPT_DIR = Path(__file__).resolve().parent
 
+# Read configuration from config.ini if available
 config = configparser.ConfigParser()
-config.read('config.ini')
+CONFIG_FILE = SCRIPT_DIR / 'config.ini'
+config.read(CONFIG_FILE)
 
 # GPT-4 Turbo context limit in tokens
 CONTEXT_LIMIT = int(config.get('DEFAULT', 'context_limit', fallback='128000'))
 
-PROJECT_DIR = Path(__file__).resolve().parent
-STANDARD_IGNORE_FILE = PROJECT_DIR / config.get('DEFAULT', 'standard_ignore_file', fallback='standard.ctcignore')
-GLOBAL_IGNORE_FILE = PROJECT_DIR / config.get('DEFAULT', 'global_ignore_file', fallback='global.ctcignore')
+# Paths for ignore files
+STANDARD_IGNORE_FILE = SCRIPT_DIR / config.get('DEFAULT', 'standard_ignore_file', fallback='standard.ctcignore')
+GLOBAL_IGNORE_FILE = SCRIPT_DIR / config.get('DEFAULT', 'global_ignore_file', fallback='global.ctcignore')
 
 
 def estimate_tokens(text, model_name='gpt-4'):
@@ -166,7 +170,7 @@ def copy_content(content, output_to_file=False, output_file=None):
 
     if output_to_file:
         output_file = output_file or 'clipboard.txt'
-        output_path = Path.cwd() / output_file
+        output_path = CURRENT_DIR / output_file
         try:
             output_path.write_text(content, encoding='utf-8')
             logging.info(f"Content has been written to {output_path}. Tokens used: {tokens_used}")
